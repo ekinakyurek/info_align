@@ -12,7 +12,7 @@ from visualize import visualize
 
 
 # configuration options
-# task: what task to perform (either lex_trans [word-level translation] or 
+# task: what task to perform (either lex_trans [word-level translation] or
 #        cogs [semantic parsing])
 # train: if true, trains a new model from scratch; if false, loads one from disk
 # count: what kind of model to train: if true, trains a count-based model
@@ -25,7 +25,7 @@ from visualize import visualize
 # COUNT = True
 # VISUALIZE = True
 
-TASK = "cogs"
+TASK = "speech"
 TRAIN = True
 COUNT = False
 VISUALIZE = True
@@ -45,11 +45,17 @@ def main():
         model_path = f"tasks/cogs/align_model.chk"
         vis_path = "tasks/cogs/vis"
         params = {"lr": 0.00003, "n_batch": 32}
+    elif TASK == "speech":
+        from tasks import speech
+        data, vocab = speech.load()
+        model_path = f"tasks/speech/pretrained_align_model.chk"
+        vis_path = "tasks/speech/vis"
+        params = {"lr": 0.0003, "n_batch": 32}
 
     if COUNT:
         model = CountModel(vocab)
     else:
-        model = Model(vocab).cuda()
+        model = PretrainedModel(vocab).cuda()
 
     if TRAIN:
         if COUNT:

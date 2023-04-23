@@ -3,6 +3,9 @@ from matplotlib import pyplot as plt
 import numpy as np
 import seaborn as sns
 import torch
+import info
+from trainer import make_batch
+from utils import batch as batcher
 
 @torch.no_grad()
 def visualize(model, vocab, data, vis_path):
@@ -27,4 +30,4 @@ def visualize(model, vocab, data, vis_path):
             for ((k, v), c) in sorted(counts.most_common(1000), key=lambda x: -x[1]):
                 print("<tr><td>", k, "</td><td>", v, "</td><td>", c, "</tr>", file=count_writer)
             print("</table></body><html>", file=count_writer)
-        writer.flush()
+            count_writer.flush()
