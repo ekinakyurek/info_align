@@ -153,8 +153,11 @@ def parse_greedy(src, tgt, model, vocab):
         out.append(((ss, se), (ts, te), curr_span_score))
         if best_split is not None:
             sp, tp = best_split
-            remaining_spans.append(((ss, sp), (ts, tp), best_score))
-            remaining_spans.append(((sp, se), (tp, te), best_score))
+            if best_score > 0:
+                pass
+            else:
+                remaining_spans.append(((ss, sp), (ts, tp), best_score))
+                remaining_spans.append(((sp, se), (tp, te), best_score))
 
     return out
 
