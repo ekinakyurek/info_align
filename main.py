@@ -26,7 +26,7 @@ from visualize import visualize
 # VISUALIZE = True
 
 TASK = "speech"
-TRAIN = True
+TRAIN = False
 COUNT = False
 VISUALIZE = True
 

@@ -73,9 +73,10 @@ class PretrainedModel(nn.Module):
         self.tokenizer.add_tokens(list(new_tokens))
         self.model.resize_token_embeddings(len(self.tokenizer))
         # self.model.apply(self.model._init_weights)
-        self.loss = nn.CrossEntropyLoss(reduction="none")
+        self.loss = nn.CrossEntropyLoss(reduction="none",
+                                        ignore_index=-100)
 
-    def forward(self, inp, out, predict=False, teacher_forcing=False):
+    def forward(self, inp, out, predict=False, teacher_forcing=False, reduce=True):
         # TODO double-check that this is necessary
         input_str  = [self.vocab.decode(x).replace("<pad>", self.tokenizer.pad_token)
                         for x in inp.numpy()]
@@ -124,7 +125,13 @@ class PretrainedModel(nn.Module):
             output_tokens = output.logits.argmax(dim=-1)
             return output.loss, output_tokens, labels
 
-        return output.loss
+        if reduce:
+            return output.loss
+        else:
+            logits = output.logits.reshape(-1, output.logits.shape[-1])
+            loss = self.loss(logits, labels.reshape(-1)).reshape(labels.shape)
+            loss = loss.sum(dim=1)
+            return loss
 
 
 # Estimates substring probabilities by training a transformer from scratch.

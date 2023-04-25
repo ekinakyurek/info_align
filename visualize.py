@@ -18,8 +18,8 @@ def visualize(model, vocab, data, vis_path):
         src_toks = tuple(vocab.decode(src).split())
         tgt_toks = tuple(vocab.decode(tgt).split())
 
-        print()
-        print(i, vocab.decode(src), vocab.decode(tgt))
+        print("=============")
+        print("i: ", i, "src: ", vocab.decode(src), "tgt: ",vocab.decode(tgt))
 
         for (s0, s1), (t0, t1), score in info.parse_greedy(src, tgt, model, vocab):
             print(src_toks[s0:s1], tgt_toks[t0:t1], score)

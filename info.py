@@ -72,7 +72,7 @@ def mask(
 
 
 # computes the log-probability of a given masked (inp, out) pair
-# (i, ii) and (j, jj) are source and target spans respectively; whether they 
+# (i, ii) and (j, jj) are source and target spans respectively; whether they
 # get masked or predicted is determined by src_mode and tgt_mode (see the `mask`
 # function)
 def cond(src, tgt, i, ii, j, jj, src_mode, tgt_mode, model, vocab):
@@ -81,9 +81,9 @@ def cond(src, tgt, i, ii, j, jj, src_mode, tgt_mode, model, vocab):
     if isinstance(model, CountModel):
         return -model(inp, out)
 
-    inp = torch.tensor(inp)[None, :].cuda()
-    out = torch.tensor(out)[None, :].cuda()
-    logprob = -model(inp, out)
+    inp = torch.tensor(inp)[None, :]
+    out = torch.tensor(out)[None, :]
+    logprob = -model(inp, out, reduce=False)
     return logprob.item()
 
 
@@ -96,9 +96,9 @@ def cond_mono(seq, s, p, e, mode, side, model, vocab):
         else:
             assert side == "tgt", side
             return -model.h_tgt(inp, out)
-    inp = torch.tensor(inp)[None, :].cuda()
-    out = torch.tensor(out)[None, :].cuda()
-    return -model(inp, out)
+    inp = torch.tensor(inp)[None, :]
+    out = torch.tensor(out)[None, :]
+    return -model(inp, out, reduce=False)
 
 
 # computes pointwise mutual information between the source span (s0,
@@ -128,7 +128,7 @@ def score_mono(seq, s, p, e, side, model, vocab):
 
 
 # parses a sentence top-down by repeatedly splitting the source into spans (i,
-# j), (j, k) and the target into spans (i', j'), (j', k') to maximize 
+# j), (j, k) and the target into spans (i', j'), (j', k') to maximize
 # pmi(i:j, i':j') + pmi(j:k, j':k') - [ pmi(i:j, j:k) + pmi(i':j', j':k') ]
 def parse_greedy(src, tgt, model, vocab):
     out = []
