@@ -14,7 +14,7 @@ from visualize import visualize
 
 
 # configuration options
-# task: what task to perform (either lex_trans [word-level translation] or 
+# task: what task to perform (either lex_trans [word-level translation] or
 #        cogs [semantic parsing])
 # train: if true, trains a new model from scratch; if false, loads one from disk
 # count: what kind of model to train: if true, trains a count-based model
@@ -22,15 +22,15 @@ from visualize import visualize
 # visualize: if true, runs a visualization step that writes model predictions
 #        to an html file
 
-TASK = "lex_trans"
-TRAIN = True
-COUNT = True
-VISUALIZE = True
+# TASK = "lex_trans"
+# TRAIN = True
+# COUNT = True
+# VISUALIZE = True
 
-#TASK = "cogs"
-#TRAIN = False
-#COUNT = True
-#VISUALIZE = True
+TASK = "speech"
+TRAIN = False
+COUNT = False
+VISUALIZE = True
 
 def main():
     random = np.random.RandomState(0)
@@ -51,12 +51,17 @@ def main():
         seq_path = f"tasks/cogs/seq_model.chk"
         vis_path = "tasks/cogs/vis"
         params = {"lr": 0.00003, "n_batch": 32}
+    elif TASK == "speech":
+        from tasks import speech
+        data, vocab = speech.load()
+        model_path = f"tasks/speech/pretrained_align_model.chk"
+        vis_path = "tasks/speech/vis"
+        params = {"lr": 0.0003, "n_batch": 32}
 
     if COUNT:
         model = CountModel(vocab)
     else:
-        model = Model(vocab).cuda()
-    seq_model = SequenceModel(vocab)
+        model = PretrainedModel(vocab).cuda()
 
     if TRAIN:
         #if COUNT:

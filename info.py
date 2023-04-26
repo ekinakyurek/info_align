@@ -72,7 +72,7 @@ def mask(
 
 
 # computes the log-probability of a given masked (inp, out) pair
-# (i, ii) and (j, jj) are source and target spans respectively; whether they 
+# (i, ii) and (j, jj) are source and target spans respectively; whether they
 # get masked or predicted is determined by src_mode and tgt_mode (see the `mask`
 # function)
 def cond(src, tgt, i, ii, j, jj, src_mode, tgt_mode, model, vocab):
@@ -81,9 +81,9 @@ def cond(src, tgt, i, ii, j, jj, src_mode, tgt_mode, model, vocab):
     if isinstance(model, CountModel):
         return -model(inp, out)
 
-    inp = torch.tensor(inp)[None, :].cuda()
-    out = torch.tensor(out)[None, :].cuda()
-    logprob = -model(inp, out)
+    inp = torch.tensor(inp)[None, :]
+    out = torch.tensor(out)[None, :]
+    logprob = -model(inp, out, reduce=False)
     return logprob.item()
 
 
@@ -96,9 +96,9 @@ def cond_mono(seq, s, p, e, mode, side, model, vocab):
         else:
             assert side == "tgt", side
             return -model.h_tgt(inp, out)
-    inp = torch.tensor(inp)[None, :].cuda()
-    out = torch.tensor(out)[None, :].cuda()
-    return -model(inp, out)
+    inp = torch.tensor(inp)[None, :]
+    out = torch.tensor(out)[None, :]
+    return -model(inp, out, reduce=False).item()
 
 
 # computes pointwise mutual information between the source span (s0,
@@ -123,12 +123,34 @@ def score_mono(seq, s, p, e, side, model, vocab):
     assert joint <= left + 1e-5, (joint, left)
     assert joint <= right + 1e-5, (joint, right, vocab.decode(seq), s, p, e)
     #print("sm", joint, left, right)
+    # normalized pmi
     score = (joint - left - right) / (-joint + 1e-5)
     return score
 
+def parse_greedy(src, model, vocab):
+    out = []
+    remaining_spans = [((0, len(src)), 0)]
+    while len(remaining_spans) > 0:
+        (ss, se), curr_span_score = remaining_spans.pop(0)
+        best_score = 0
+        best_split = None
+        for sp in range(ss+1, se):
+            score_xs = -score_mono(src, ss, sp, se, "src", model, vocab)
+            if score_xs > best_score:
+                best_score = score_xs
+                best_split = sp
+
+        out.append(((ss, se), best_score))
+
+        if best_split is not None:
+            sp = best_split
+            remaining_spans.append(((ss, sp), best_score))
+            remaining_spans.append(((sp, se), best_score))
+
+    return out
 
 # parses a sentence top-down by repeatedly splitting the source into spans (i,
-# j), (j, k) and the target into spans (i', j'), (j', k') to maximize 
+# j), (j, k) and the target into spans (i', j'), (j', k') to maximize
 # pmi(i:j, i':j') + pmi(j:k, j':k') - [ pmi(i:j, j:k) + pmi(i':j', j':k') ]
 def parse_greedy(src, tgt, model, vocab):
     out = []
@@ -137,7 +159,7 @@ def parse_greedy(src, tgt, model, vocab):
     tgt_toks = vocab.decode(tgt)
     while len(remaining_spans) > 0:
         (ss, se), (ts, te), curr_span_score = remaining_spans.pop(0)
-        best_score = 0
+        best_score = -np.inf
         best_split = None
         for sp in range(ss+1, se):
             for tp in range(ts+1, te):
@@ -153,10 +175,13 @@ def parse_greedy(src, tgt, model, vocab):
         out.append(((ss, se), (ts, te), curr_span_score))
         if best_split is not None:
             sp, tp = best_split
-            remaining_spans.append(((ss, sp), (ts, tp), best_score))
-            remaining_spans.append(((sp, se), (tp, te), best_score))
+            if best_score >= 0:
+                remaining_spans.append(((ss, sp), (ts, tp), best_score))
+                remaining_spans.append(((sp, se), (tp, te), best_score))
 
     return out
+
+
 
 
 # uses dynamic programming to find the pair of aligned constituency trees that
